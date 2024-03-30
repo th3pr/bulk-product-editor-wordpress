@@ -194,13 +194,13 @@ function bulk_product_editor_page()
             <table class="widefat striped">
                 <thead>
                     <tr>
-                        <th class="sortable" data-column="title">Title</th>
-                        <th class="sortable" data-column="description">Description</th>
-                        <th class="sortable" data-column="regular_price">Regular Price</th>
-                        <th class="sortable" data-column="sale_price">Sale Price</th>
-                        <th class="sortable" data-column="sku">SKU</th>
-                        <th class="sortable" data-column="weight">Weight (<?php echo esc_html($weight_unit); ?>)</th>
-                        <th class="sortable" data-column="height">Height (<?php echo esc_html($height_unit); ?>)</th>
+                        <th class="sortable">Title</th>
+                        <th class="sortable" >Description</th>
+                        <th class="sortable" >Regular Price</th>
+                        <th class="sortable" >Sale Price</th>
+                        <th class="sortable" >SKU</th>
+                        <th class="sortable" >Weight (<?php echo esc_html($weight_unit); ?>)</th>
+                        <th class="sortable" >Height (<?php echo esc_html($height_unit); ?>)</th>
                     </tr>
                 </thead>
 
