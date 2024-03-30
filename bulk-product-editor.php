@@ -49,7 +49,6 @@ function bulk_product_editor_menu()
 add_action('admin_menu', 'bulk_product_editor_menu');
 
 // Bulk Product Editor page with pagination and product per page dropdown
-// Bulk Product Editor page with pagination and product per page dropdown
 function bulk_product_editor_page()
 {
     if (!current_user_can('manage_options')) {
@@ -72,70 +71,75 @@ function bulk_product_editor_page()
 
     // Process form submission
     if (isset($_POST['bulk_edit_products'])) {
-        // Handle bulk edit here
-        $args = array(
-            'post_type' => 'product',
-            'posts_per_page' => $products_per_page,
-            'paged' => $current_page,
-            'orderby' => 'title',
-            'order' => 'ASC'
-        );
-        $products_query = new WP_Query($args);
+        // Verify nonce
+        if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'bulk-edit-products')) {
+            // Handle bulk edit here
+            $args = array(
+                'post_type' => 'product',
+                'posts_per_page' => $products_per_page,
+                'paged' => $current_page,
+                'orderby' => 'title',
+                'order' => 'ASC'
+            );
+            $products_query = new WP_Query($args);
 
-        if ($products_query->have_posts()) :
-            while ($products_query->have_posts()) : $products_query->the_post();
-                $product_id = get_the_ID();
+            if ($products_query->have_posts()) :
+                while ($products_query->have_posts()) : $products_query->the_post();
+                    $product_id = get_the_ID();
 
-                // Update product data
-                $product_data = array(
-                    'ID' => $product_id,
-                    'post_title' => isset($_POST['new_title'][$product_id]) ? sanitize_text_field($_POST['new_title'][$product_id]) : get_the_title($product_id), // Title
-                    'post_content' => isset($_POST['new_description'][$product_id]) ? wp_kses_post($_POST['new_description'][$product_id]) : get_the_content($product_id), // Description
-                );
+                    // Update product data
+                    $product_data = array(
+                        'ID' => $product_id,
+                        'post_title' => isset($_POST['new_title'][$product_id]) ? sanitize_text_field($_POST['new_title'][$product_id]) : get_the_title($product_id), // Title
+                        'post_content' => isset($_POST['new_description'][$product_id]) ? wp_kses_post($_POST['new_description'][$product_id]) : get_the_content($product_id), // Description
+                    );
 
-                // Regular Price
-                if (isset($_POST['new_regular_price'][$product_id])) {
-                    $regular_price = wc_format_decimal($_POST['new_regular_price'][$product_id]);
-                    update_post_meta($product_id, '_regular_price', $regular_price);
-                }
+                    // Regular Price
+                    if (isset($_POST['new_regular_price'][$product_id])) {
+                        $regular_price = wc_format_decimal($_POST['new_regular_price'][$product_id]);
+                        update_post_meta($product_id, '_regular_price', $regular_price);
+                    }
 
-                // Sale Price
-                if (isset($_POST['new_sale_price'][$product_id])) {
-                    $sale_price = wc_format_decimal($_POST['new_sale_price'][$product_id]);
-                    update_post_meta($product_id, '_sale_price', $sale_price);
-                } else {
-                    // If no sale price is provided, remove the existing sale price
-                    delete_post_meta($product_id, '_sale_price');
-                }
+                    // Sale Price
+                    if (isset($_POST['new_sale_price'][$product_id])) {
+                        $sale_price = wc_format_decimal($_POST['new_sale_price'][$product_id]);
+                        update_post_meta($product_id, '_sale_price', $sale_price);
+                    } else {
+                        // If no sale price is provided, remove the existing sale price
+                        delete_post_meta($product_id, '_sale_price');
+                    }
 
-                // SKU
-                if (isset($_POST['new_sku'][$product_id])) {
-                    $sku = sanitize_text_field($_POST['new_sku'][$product_id]);
-                    update_post_meta($product_id, '_sku', $sku);
-                }
+                    // SKU
+                    if (isset($_POST['new_sku'][$product_id])) {
+                        $sku = sanitize_text_field($_POST['new_sku'][$product_id]);
+                        update_post_meta($product_id, '_sku', $sku);
+                    }
 
-                // Weight
-                if (isset($_POST['new_weight'][$product_id])) {
-                    $weight = wc_format_decimal($_POST['new_weight'][$product_id]) . ' ' . $weight_unit;
-                    update_post_meta($product_id, '_weight', $weight);
-                }
+                    // Weight
+                    if (isset($_POST['new_weight'][$product_id])) {
+                        $weight = wc_format_decimal($_POST['new_weight'][$product_id]);
+                        update_post_meta($product_id, '_weight', $weight);
+                    }
 
-                // Height
-                if (isset($_POST['new_height'][$product_id])) {
-                    $height = wc_format_decimal($_POST['new_height'][$product_id]) . ' ' . $height_unit;
-                    update_post_meta($product_id, '_height', $height);
-                }
+                    // Height
+                    if (isset($_POST['new_height'][$product_id])) {
+                        $height = wc_format_decimal($_POST['new_height'][$product_id]);
+                        update_post_meta($product_id, '_height', $height);
+                    }
 
-                // Update post
-                wp_update_post($product_data);
-            endwhile;
-        endif;
+                    // Update post
+                    wp_update_post($product_data);
+                endwhile;
+            endif;
 
-        // Redirect to avoid resubmission
-        wp_redirect(admin_url('admin.php?page=bulk-product-editor&bulk_edit_success=1&paged=' . $current_page . '&products_per_page=' . $products_per_page));
-        exit();
+            // Redirect to avoid resubmission
+            wp_redirect(admin_url('admin.php?page=bulk-product-editor&bulk_edit_success=1&paged=' . $current_page . '&products_per_page=' . $products_per_page));
+            exit();
+        } else {
+            // Nonce verification failed, display error message
+            wp_die('Security check failed. Please try again.');
+        }
     }
-
 
     // Display bulk edit form
     ?>
@@ -165,6 +169,7 @@ function bulk_product_editor_page()
 
         <form method="post" action="">
             <input type="hidden" name="page" value="bulk-product-editor"> <!-- Add hidden input for page parameter -->
+            <?php wp_nonce_field('bulk-edit-products'); ?>
             <label for="sort_column">Sort by:</label>
             <select name="sort_column" id="sort_column">
                 <option value="title" <?php selected($sort_column, 'title'); ?>>Title</option>
@@ -254,9 +259,8 @@ function bulk_product_editor_page()
             ?>
 
             <input type="submit" name="bulk_edit_products" value="Bulk Edit" class="button-primary" />
+            <?php wp_nonce_field('bulk-edit-products'); ?>
         </form>
     </div>
     <?php
 }
-
-?>
